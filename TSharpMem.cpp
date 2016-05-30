@@ -153,7 +153,7 @@ void TSharpMem::drawPixel(int16_t x, int16_t y, uint16_t color)
 
   switch(rotation) {
    case 1:
-    swap(x, y);
+    adagfxswap(x, y);
     x = WIDTH  - 1 - x;
     break;
    case 2:
@@ -161,7 +161,7 @@ void TSharpMem::drawPixel(int16_t x, int16_t y, uint16_t color)
     y = HEIGHT - 1 - y;
     break;
    case 3:
-    swap(x, y);
+    adagfxswap(x, y);
     y = HEIGHT - 1 - y;
     break;
   }
@@ -193,7 +193,7 @@ uint8_t TSharpMem::getPixel(uint16_t x, uint16_t y)
 
   switch(rotation) {
    case 1:
-    swap(x, y);
+    adagfxswap(x, y);
     x = WIDTH  - 1 - x;
     break;
    case 2:
@@ -201,7 +201,7 @@ uint8_t TSharpMem::getPixel(uint16_t x, uint16_t y)
     y = HEIGHT - 1 - y;
     break;
    case 3:
-    swap(x, y);
+    adagfxswap(x, y);
     y = HEIGHT - 1 - y;
     break;
   }
@@ -217,7 +217,7 @@ uint8_t TSharpMem::getPixel(uint16_t x, uint16_t y)
 /**************************************************************************/
 void TSharpMem::clearDisplay() 
 {
-  clearBuffer() ;
+  resetBuffer() ;
   // Send the clear screen command rather than doing a HW refresh (quicker)
   digitalWrite(_ss, HIGH);
   sendbyte(_sharpmem_vcom | SHARPMEM_BIT_CLEAR);
@@ -226,7 +226,7 @@ void TSharpMem::clearDisplay()
   digitalWrite(_ss, LOW);
 }
 
-void TSharpMem::clearBuffer() 
+void TSharpMem::resetBuffer() 
 {
   memset(sharpmem_buffer, 0xff, (SHARPMEM_LCDWIDTH * SHARPMEM_LCDHEIGHT) / 8);
 }
@@ -236,7 +236,7 @@ void TSharpMem::clearBuffer()
     @brief Renders the contents of the pixel buffer on the LCD
 */
 /**************************************************************************/
-void TSharpMem::refresh(void) 
+void TSharpMem::writeWhole(void) 
 {
   uint16_t i, totalbytes, currentline, oldline;  
   totalbytes = (SHARPMEM_LCDWIDTH * SHARPMEM_LCDHEIGHT) / 8;

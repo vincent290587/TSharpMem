@@ -39,6 +39,7 @@ All text above, and the splash screen must be included in any redistribution
   #include <avr/pgmspace.h>
 #endif
 
+#define adagfxswap(a, b) { int16_t t = a; a = b; b = t; }
 
 // LCD Dimensions
 #define SHARPMEM_LCDWIDTH       (400)
@@ -50,9 +51,10 @@ class TSharpMem : public Adafruit_GFX {
   void begin(void);
   void drawPixel(int16_t x, int16_t y, uint16_t color);
   uint8_t getPixel(uint16_t x, uint16_t y);
-  void clearDisplay();
-  void clearBuffer() ;
-  void refresh(void);
+  void clearDisplay(void);
+  
+  void resetBuffer(void) ;
+  void writeWhole(void);
 
  private:
   uint8_t _ss, _clk, _mosi;
