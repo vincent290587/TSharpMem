@@ -14,30 +14,19 @@ products from Adafruit!
 Written by Limor Fried/Ladyada  for Adafruit Industries.  
 BSD license, check license.txt for more information
 All text above, and the splash screen must be included in any redistribution
-*********************************************************************/
+ *********************************************************************/
 
 #ifndef _TSharpMem_
 #define _TSharpMem_
 
 
 #if ARDUINO >= 100
- #include "Arduino.h"
- #include "Print.h"
+#include "Arduino.h"
+#include "Print.h"
 #else
- #include "WProgram.h"
+#include "WProgram.h"
 #endif
 #include <Adafruit_GFX.h>
-
-#if defined(__SAM3X8E__)
-#include <include/pio.h>
-  #define PROGMEM
-  #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
-  #define pgm_read_word(addr) (*(const unsigned short *)(addr))
-  typedef unsigned char prog_uchar;
-#endif
-#ifdef __AVR__
-  #include <avr/pgmspace.h>
-#endif
 
 #define adagfxswap(a, b) { int16_t t = a; a = b; b = t; }
 
@@ -46,27 +35,28 @@ All text above, and the splash screen must be included in any redistribution
 #define SHARPMEM_LCDHEIGHT      (240) 
 
 class TSharpMem : public Adafruit_GFX {
- public:
-  TSharpMem(uint8_t clk, uint8_t mosi, uint8_t ss);
-  void begin(void);
-  void drawPixel(int16_t x, int16_t y, uint16_t color);
-  uint8_t getPixel(uint16_t x, uint16_t y);
-  void clearDisplay(void);
-  
-  void resetBuffer(void) ;
-  void writeWhole(void);
+public:
+	TSharpMem(uint8_t clk, uint8_t mosi, uint8_t ss);
+	void begin(void);
+	void drawPixel(int16_t x, int16_t y, uint16_t color);
+	uint8_t getPixel(uint16_t x, uint16_t y);
+	void clearDisplay(void);
 
- private:
-  uint8_t _ss, _clk, _mosi;
-  volatile uint8_t *dataport, *clkport;
-  uint8_t _sharpmem_vcom, datapinmask, clkpinmask;
-  
-  void sendbyte(uint8_t data);
-  void sendbyteLSB(uint8_t data);
-  void sendbyteLSB_last(uint8_t data);
- protected:
-  uint8_t pcs_data, pcs_command;
-  void waitFifoNotFull(void) {
+	void resetBuffer(void) ;
+	void writeWhole(void);
+
+protected:
+	uint8_t _ss, _clk, _mosi;
+	volatile uint8_t *dataport, *clkport;
+	uint8_t datapinmask, clkpinmask;
+	uint8_t _sharpmem_vcom;
+
+	void sendbyte(uint8_t data);
+	void sendbyteLSB(uint8_t data);
+	void sendbyteLSB_last(uint8_t data);
+private:
+	uint8_t pcs_data, pcs_command;
+	void waitFifoNotFull(void) {
 		uint32_t sr;
 		uint32_t tmp __attribute__((unused));
 		do {
