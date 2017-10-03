@@ -41,9 +41,9 @@ All text above, and the splash screen must be included in any redistribution
  **************************************************************************/
 #define SPICLOCK 5000000
 
-#define SHARPMEM_BIT_WRITECMD   (0x80)
-#define SHARPMEM_BIT_VCOM       (0x40)
-#define SHARPMEM_BIT_CLEAR      (0x20)
+#define SHARPMEM_BIT_WRITECMD   (0x01)
+#define SHARPMEM_BIT_VCOM       (0x02)
+#define SHARPMEM_BIT_CLEAR      (0x04)
 #define TOGGLE_VCOM             do { _sharpmem_vcom = _sharpmem_vcom ? 0x00 : SHARPMEM_BIT_VCOM; } while(0);
 
 byte sharpmem_buffer[(SHARPMEM_LCDWIDTH * SHARPMEM_LCDHEIGHT) / 8];
@@ -57,16 +57,8 @@ TSharpMem::TSharpMem(uint8_t clk, uint8_t mosi, uint8_t ss) :
 	_mosi = mosi;
 	_ss = ss;
 
-	//pinMode(_clk, OUTPUT);
-	//pinMode(_mosi, OUTPUT);
-
-	//SPI.setBitOrder(LSBFIRST);
-	//SPI.setDataMode(SPI_MODE0);
-	//SPI.setClockDivider(SPI_CLOCK_DIV2);
-
 	// Set the vcom bit to a defined state
 	_sharpmem_vcom = SHARPMEM_BIT_VCOM;
-
 
 }
 
@@ -76,20 +68,6 @@ void TSharpMem::begin() {
 	setRotation(1);
 }
 
-/* *************** */
-/* PRIVATE METHODS */
-/* *************** */
-
-uint8_t reverse(uint8_t x)
-{
-	uint8_t i, b = x;
-	for (i=7; i; i--) {
-		b <<= 1;
-		x  >>= 1;
-		b |=  x & 1;
-	}
-	return b;
-}
 /**************************************************************************/
 /*!
     @brief  Sends a single byte in pseudo-SPI.
@@ -101,15 +79,9 @@ void TSharpMem::sendbyte(uint8_t data)
 
 }
 
-void TSharpMem::sendbyteLSB(uint8_t data) 
+void TSharpMem::sendbyte_last(uint8_t data) 
 {
-	writedata8_cont(reverse(data));//
-}
-
-
-void TSharpMem::sendbyteLSB_last(uint8_t data) 
-{
-	writedata8_last(reverse(data));//
+	writedata8_last(data);//
 }
 
 
@@ -204,12 +176,12 @@ void TSharpMem::clearDisplay()
 {
 	resetBuffer() ;
 	// Send the clear screen command rather than doing a HW refresh (quicker)
-	SPI.beginTransaction(SPISettings(SPICLOCK, MSBFIRST, SPI_MODE0));
-	digitalWrite(_ss, HIGH);
+	SPI.beginTransaction(SPISettings(SPICLOCK, LSBFIRST, SPI_MODE0));
+	digitalWriteFast(_ss, HIGH);
 	sendbyte(_sharpmem_vcom | SHARPMEM_BIT_CLEAR);
-	sendbyteLSB_last(0x00);
+	sendbyte_last(0x00);
 	TOGGLE_VCOM;
-	digitalWrite(_ss, LOW);
+	digitalWriteFast(_ss, LOW);
 	SPI.endTransaction();
 }
 
@@ -229,39 +201,40 @@ void TSharpMem::writeWhole(void)
 	totalbytes = (SHARPMEM_LCDWIDTH * SHARPMEM_LCDHEIGHT) / 8;
 
 	// Send the write command
-	SPI.beginTransaction(SPISettings(SPICLOCK, MSBFIRST, SPI_MODE0));
-	digitalWrite(_ss, HIGH);
+	SPI.beginTransaction(SPISettings(SPICLOCK, LSBFIRST, SPI_MODE0));
+	digitalWriteFast(_ss, HIGH);
 
 	sendbyte(SHARPMEM_BIT_WRITECMD | _sharpmem_vcom);
 	TOGGLE_VCOM;
 
 	// Send the address for line 1
 	oldline = currentline = 1;
-	sendbyteLSB(currentline);
+	sendbyte(currentline);
 
 	// Send image buffer
 	for (i=0; i<totalbytes; i++)
 	{
-		sendbyteLSB(sharpmem_buffer[i]);
+		sendbyte(sharpmem_buffer[i]);
 		currentline = ((i+1)/(SHARPMEM_LCDWIDTH/8)) + 1;
+		
 		if(currentline != oldline)
 		{
 			// Send end of line and address bytes
-			sendbyteLSB_last(0x00);
+			sendbyte_last(0x00);
 
 			if (currentline <= SHARPMEM_LCDHEIGHT)
 			{
-				sendbyteLSB(currentline);
+				sendbyte(currentline);
 			}
 			oldline = currentline;
 		}
 	}
 
 	// Send another trailing 8 bits for the last line
-	sendbyteLSB(0x00);
-	sendbyteLSB_last(0x00);
+	sendbyte(0x00);
+	sendbyte_last(0x00);
 
-	digitalWrite(_ss, LOW);
+	digitalWriteFast(_ss, LOW);
 	SPI.endTransaction();
 }
 

@@ -52,8 +52,7 @@ protected:
 	uint8_t _sharpmem_vcom;
 
 	void sendbyte(uint8_t data);
-	void sendbyteLSB(uint8_t data);
-	void sendbyteLSB_last(uint8_t data);
+	void sendbyte_last(uint8_t data);
 private:
 	uint8_t pcs_data, pcs_command;
 	void waitFifoNotFull(void) {
@@ -63,19 +62,6 @@ private:
 			sr = KINETISK_SPI0.SR;
 			if (sr & 0xF0) tmp = KINETISK_SPI0.POPR;  // drain RX FIFO
 		} while ((sr & (15 << 12)) > (3 << 12));
-	}
-	void waitFifoEmpty(void) {
-		uint32_t sr;
-		uint32_t tmp __attribute__((unused));
-		do {
-			sr = KINETISK_SPI0.SR;
-			if (sr & 0xF0) tmp = KINETISK_SPI0.POPR;  // drain RX FIFO
-		} while ((sr & 0xF0F0) > 0);             // wait both RX & TX empty
-	}
-	void waitTransmitComplete(void) __attribute__((always_inline)) {
-		uint32_t tmp __attribute__((unused));
-		while (!(KINETISK_SPI0.SR & SPI_SR_TCF)) ; // wait until final output done
-		tmp = KINETISK_SPI0.POPR;                  // drain the final RX FIFO word
 	}
 	void waitTransmitComplete(uint32_t mcr) __attribute__((always_inline)) {
 		uint32_t tmp __attribute__((unused));
@@ -90,18 +76,9 @@ private:
 			tmp = KINETISK_SPI0.POPR;
 		}
 	}
-	void writecommand_cont(uint8_t c) __attribute__((always_inline)) {
-		KINETISK_SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
-		waitFifoNotFull();
-	}
 	void writedata8_cont(uint8_t c) __attribute__((always_inline)) {
 		KINETISK_SPI0.PUSHR = c | (pcs_data << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_CONT;
 		waitFifoNotFull();
-	}
-	void writecommand_last(uint8_t c) __attribute__((always_inline)) {
-		uint32_t mcr = SPI0_MCR;
-		KINETISK_SPI0.PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_EOQ;
-		waitTransmitComplete(mcr);
 	}
 	void writedata8_last(uint8_t c) __attribute__((always_inline)) {
 		uint32_t mcr = SPI0_MCR;
